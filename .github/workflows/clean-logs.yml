@@ -1,4 +1,4 @@
-name: Limpiar todas las ejecuciones de workflows
+name: Clean All Workflow Runs
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ jobs:
   clean_workflows:
     runs-on: ubuntu-latest
     steps:
-      - name: Eliminar todas las ejecuciones de workflows
+      - name: Delete all workflow runs
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.ELEVATED_GITHUB_TOKEN }}

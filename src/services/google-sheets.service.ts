@@ -2,6 +2,7 @@ import { GoogleSpreadsheet, GoogleSpreadsheetWorksheet } from "google-spreadshee
 import { JWT } from "google-auth-library";
 import { MetaCatalogFeedConfig } from "../core/types/google-sheets/meta-catalog-feed.types";
 import { MetaPropertyFeedItem } from "../core/types/meta-catalog/meta-property-feed.types";
+import { devMessages } from "../core/constants/messages.constants";
 
 export class MetaCatalogSheetsService {
   private auth: JWT;
@@ -63,7 +64,7 @@ export class MetaCatalogSheetsService {
           await sheet.setHeaderRow(headers);
         }
       } catch (error) {
-        console.warn("Could not load headers, setting new ones:", error);
+        console.warn(devMessages.errors.loadingHeaders, error);
         await sheet.setHeaderRow(headers);
       }
     }

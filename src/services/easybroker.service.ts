@@ -1,5 +1,6 @@
 import { EasyBrokerPropertiesListResponse, EasyBrokerPropertySummary } from "../core/types/easybroker/list-all-properties.types";
 import { EasyBrokerPropertyDetails } from "../core/types/easybroker/retrieve-a-property.types";
+import { devMessages, userMessages } from "../core/constants/messages.constants";
 
 export class EasyBrokerService {
   private apiKey: string;
@@ -13,7 +14,7 @@ export class EasyBrokerService {
     const allProperties: EasyBrokerPropertySummary[] = [];
 
     if (startPage < 1 || endPage < startPage || endPage - startPage + 1 > 10) {
-      throw new Error("Invalid page range. Maximum 10 pages and end page must be >= start page");
+      throw new Error(userMessages.errors.invalidPageRange);
     }
 
     for (let page = startPage; page <= endPage; page++) {
@@ -30,14 +31,14 @@ export class EasyBrokerService {
         const response: EasyBrokerPropertiesListResponse = await fetch(url, options).then((res) => res.json());
         allProperties.push(...response.content);
 
-        console.log(`Página ${page} procesada: ${response.content.length} propiedades`);
+        console.log(devMessages.logs.pageProcessed(page, response.content.length));
 
         if (!response.pagination.next_page) {
-          console.log(`No hay más páginas después de la página ${page}`);
+          console.log(devMessages.logs.noMorePages(page));
           break;
         }
       } catch (error) {
-        console.error(`Error fetching page ${page}:`, error);
+        console.error(devMessages.errors.fetchingPage(page), error);
         throw error;
       }
     }
@@ -58,7 +59,7 @@ export class EasyBrokerService {
     try {
       return await fetch(url, options).then((res) => res.json());
     } catch (error) {
-      console.error(`Error fetching property ${publicId}:`, error);
+      console.error(devMessages.errors.fetchingProperty(publicId), error);
       throw error;
     }
   }

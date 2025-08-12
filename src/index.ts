@@ -1,5 +1,5 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from "aws-lambda";
-import { errorMessages } from "./core/constants/messages.constants";
+import { userMessages, devMessages } from "./core/constants/messages.constants";
 import { buildResponse } from "./core/utils/build-lambda-function-url-response.util";
 import getEnv from "./config/environment.config";
 import { EasyBrokerService } from "./services/easybroker.service";
@@ -13,14 +13,14 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
     const env = getEnv();
     const body = JSON.parse(event.body || "{}");
     const { spreadsheetId, startPage, endPage } = body;
-    if (!spreadsheetId) throw new Error("spreadsheetId is required");
-    if (!startPage || !endPage) throw new Error("startPage and endPage are required");
+    if (!spreadsheetId) throw new Error(userMessages.errors.spreadsheetRequired);
+    if (!startPage || !endPage) throw new Error(userMessages.errors.pagesRequired);
     
     const startPageNum = parseInt(startPage);
     const endPageNum = parseInt(endPage);
     
     if (startPageNum < 1 || endPageNum < startPageNum || (endPageNum - startPageNum + 1) > 10) {
-      throw new Error("Invalid page range. Maximum 10 pages and end page must be >= start page");
+      throw new Error(userMessages.errors.invalidPageRange);
     }
 
     const easyBrokerService = new EasyBrokerService(env.EASYBROKER_API_KEY);
@@ -29,22 +29,22 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
       privateKey: env.GOOGLE_PRIVATE_KEY,
     });
 
-    console.log(`Obteniendo propiedades de EasyBroker (páginas ${startPageNum}-${endPageNum})...`);
+    console.log(devMessages.logs.fetchingProperties(startPageNum, endPageNum));
     const properties = await easyBrokerService.getPropertiesByPageRange(startPageNum, endPageNum);
-    console.log(`Se encontraron ${properties.length} propiedades`);
+    console.log(devMessages.logs.propertiesFound(properties.length));
 
-    console.log("Obteniendo detalles de cada propiedad...");
+    console.log(devMessages.logs.fetchingDetails);
     const detailedProperties = await Promise.all(properties.map((property) => easyBrokerService.getPropertyDetails(property.public_id)));
 
-    console.log("Formateando datos para Meta Catalog Feed...");
+    console.log(devMessages.logs.formattingData);
     const metaFeedData = MetaPropertyFeedFormatter.formatForMetaCatalog(properties, detailedProperties);
 
-    console.log("Agregando datos al final de la lista existente...");
+    console.log(devMessages.logs.appendingData);
     await metaCatalogService.appendMetaPropertyFeed(spreadsheetId, metaFeedData);
 
     const catalogInfo = await metaCatalogService.getMetaCatalogInfo(spreadsheetId);
 
-    const message = `✅ Propiedades agregadas exitosamente!\n📊 Propiedades añadidas: ${properties.length} (páginas ${startPageNum}-${endPageNum})\n📋 Feed: ${catalogInfo.title}\n📝 Filas totales en el sheet: ${catalogInfo.rowCount}`;
+    const message = userMessages.success.propertiesAdded(properties.length, `${startPageNum}-${endPageNum}`, catalogInfo.title, catalogInfo.rowCount);
     console.log(message);
 
     return buildResponse({
@@ -59,7 +59,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
     });
   } catch (error) {
     console.error(error);
-    let message = errorMessages.defaultError;
+    let message = userMessages.errors.defaultError;
     if (error instanceof Error) message += ` ${error.message}`;
 
     return buildResponse({ statusCode: 500, body: { message } });
