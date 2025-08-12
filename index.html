@@ -11,6 +11,34 @@
         scrollbar-width: thin;
         scrollbar-color: oklch(63.7% 0.237 25.331) transparent;
       }
+      
+      .loading-spinner {
+        border: 3px solid #374151;
+        border-top: 3px solid #dc2626;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        margin-right: 8px;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .loading-dots::after {
+        content: '';
+        animation: dots 1.5s infinite;
+      }
+      
+      @keyframes dots {
+        0%, 20% { content: ''; }
+        40% { content: '.'; }
+        60% { content: '..'; }
+        80%, 100% { content: '...'; }
+      }
     </style>
   </head>
 
@@ -65,7 +93,7 @@
           class="bg-red-900 border-red-500 border uppercase text-sm p-4 rounded-md w-full hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           type="button"
         >
-          Iniciar sincronización
+          <span id="buttonContent">Iniciar sincronización</span>
         </button>
       </div>
 
@@ -92,6 +120,7 @@
       });
 
       const syncButton = document.getElementById("syncButton");
+      const buttonContent = document.getElementById("buttonContent");
       const spreadsheetIdInput = document.getElementById("spreadsheetId");
       const responseSection = document.getElementById("responseSection");
       const responseContent = document.getElementById("responseContent");
@@ -114,7 +143,8 @@
         responseSection.classList.add("hidden");
         responseContent.textContent = "";
         syncButton.disabled = true;
-        syncButton.textContent = "Sincronizando...";
+        buttonContent.innerHTML = '<div class="loading-spinner"></div>Sincronizando<span class="loading-dots"></span>';
+        buttonContent.classList.add('flex', 'items-center', 'justify-center');
 
         try {
           const endpoint = "https://3a4eeoseundplud3llhiatycp40husfx.lambda-url.us-east-1.on.aws/";
@@ -136,7 +166,8 @@
         } finally {
           responseSection.classList.remove("hidden");
           syncButton.disabled = !spreadsheetIdInput.value.trim();
-          syncButton.textContent = "Iniciar sincronización";
+          buttonContent.innerHTML = "Iniciar sincronización";
+          buttonContent.classList.remove('flex', 'items-center', 'justify-center');
         }
       });
     </script>
