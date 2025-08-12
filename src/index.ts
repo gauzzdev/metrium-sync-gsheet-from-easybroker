@@ -52,6 +52,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
 
     return buildResponse({ statusCode: 200, body: { message } });
   } catch (error) {
+    console.error(error);
     let message = errorMessages.defaultError;
     if (error instanceof Error) message += ` ${error.message}`;
 
