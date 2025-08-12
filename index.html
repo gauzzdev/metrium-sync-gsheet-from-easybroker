@@ -11,33 +11,27 @@
         scrollbar-width: thin;
         scrollbar-color: oklch(63.7% 0.237 25.331) transparent;
       }
-      
-      .loading-spinner {
-        border: 3px solid #374151;
-        border-top: 3px solid #dc2626;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        animation: spin 1s linear infinite;
-        display: inline-block;
-        margin-right: 8px;
-      }
-      
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      
+
       .loading-dots::after {
-        content: '';
+        content: "";
         animation: dots 1.5s infinite;
       }
-      
+
       @keyframes dots {
-        0%, 20% { content: ''; }
-        40% { content: '.'; }
-        60% { content: '..'; }
-        80%, 100% { content: '...'; }
+        0%,
+        20% {
+          content: "";
+        }
+        40% {
+          content: ".";
+        }
+        60% {
+          content: "..";
+        }
+        80%,
+        100% {
+          content: "...";
+        }
       }
     </style>
   </head>
@@ -143,8 +137,8 @@
         responseSection.classList.add("hidden");
         responseContent.textContent = "";
         syncButton.disabled = true;
-        buttonContent.innerHTML = '<div class="loading-spinner"></div>Sincronizando<span class="loading-dots"></span>';
-        buttonContent.classList.add('flex', 'items-center', 'justify-center');
+        buttonContent.innerHTML = 'Sincronizando<span class="loading-dots"></span>';
+        buttonContent.classList.add("flex", "items-center", "justify-center");
 
         try {
           const endpoint = "https://3a4eeoseundplud3llhiatycp40husfx.lambda-url.us-east-1.on.aws/";
@@ -167,7 +161,7 @@
           responseSection.classList.remove("hidden");
           syncButton.disabled = !spreadsheetIdInput.value.trim();
           buttonContent.innerHTML = "Iniciar sincronización";
-          buttonContent.classList.remove('flex', 'items-center', 'justify-center');
+          buttonContent.classList.remove("flex", "items-center", "justify-center");
         }
       });
     </script>
