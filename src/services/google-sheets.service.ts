@@ -17,7 +17,7 @@ export class MetaCatalogSheetsService {
   async clearMetaCatalogFeed(spreadsheetId: string): Promise<void> {
     const doc = new GoogleSpreadsheet(spreadsheetId, this.auth);
     await doc.loadInfo();
-    
+
     const sheet = doc.sheetsByIndex[0];
     await sheet.clear();
   }
@@ -25,52 +25,80 @@ export class MetaCatalogSheetsService {
   private async ensureSheetSize(sheet: any, requiredColumns: number, requiredRows: number): Promise<void> {
     const currentColumns = sheet.columnCount;
     const currentRows = sheet.rowCount;
-    
+
     const needsResize = currentColumns < requiredColumns || currentRows < requiredRows;
-    
+
     if (needsResize) {
       const newColumns = Math.max(currentColumns, requiredColumns);
       const newRows = Math.max(currentRows, requiredRows);
-      
+
       await sheet.resize({
         rowCount: newRows,
-        columnCount: newColumns
+        columnCount: newColumns,
       });
+    }
+  }
+
+  private async applyTextClipFormat(sheet: any, rowCount: number, columnCount: number): Promise<void> {
+    try {
+      const range = `A1:${String.fromCharCode(64 + columnCount)}${rowCount}`;
+
+      await sheet.batchUpdate([
+        {
+          repeatCell: {
+            range: {
+              sheetId: sheet.sheetId,
+              startRowIndex: 0,
+              endRowIndex: rowCount,
+              startColumnIndex: 0,
+              endColumnIndex: columnCount,
+            },
+            cell: {
+              userEnteredFormat: {
+                wrapStrategy: "CLIP",
+                verticalAlignment: "TOP",
+              },
+            },
+            fields: "userEnteredFormat.wrapStrategy,userEnteredFormat.verticalAlignment",
+          },
+        },
+      ]);
+    } catch (error) {
+      console.warn("Could not apply text clip format:", error);
     }
   }
 
   async insertMetaPropertyFeed(spreadsheetId: string, data: MetaPropertyFeedItem[]): Promise<void> {
     const doc = new GoogleSpreadsheet(spreadsheetId, this.auth);
     await doc.loadInfo();
-    
+
     const sheet = doc.sheetsByIndex[0];
-    
+
     if (data.length === 0) return;
 
     const headers = Object.keys(data[0]);
     const requiredColumns = headers.length;
-    const requiredRows = data.length + 1; // +1 for header row
+    const requiredRows = data.length + 1;
 
-    // Ensure sheet has enough columns and rows
     await this.ensureSheetSize(sheet, requiredColumns, requiredRows);
-    
+
     await sheet.setHeaderRow(headers);
-    
-    const rowData = data.map(item => 
-      Object.values(item).map(value => value === null ? '' : String(value))
-    );
+
+    const rowData = data.map((item) => Object.values(item).map((value) => (value === null ? "" : String(value))));
     await sheet.addRows(rowData);
+
+    await this.applyTextClipFormat(sheet, data.length + 1, headers.length);
   }
 
   async getMetaCatalogInfo(spreadsheetId: string): Promise<{ title: string; rowCount: number }> {
     const doc = new GoogleSpreadsheet(spreadsheetId, this.auth);
     await doc.loadInfo();
-    
+
     const sheet = doc.sheetsByIndex[0];
-    
+
     return {
       title: doc.title,
-      rowCount: sheet.rowCount
+      rowCount: sheet.rowCount,
     };
   }
 }

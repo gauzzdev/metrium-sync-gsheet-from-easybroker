@@ -3,30 +3,39 @@ import { EasyBrokerPropertyDetails } from "../core/types/easybroker/retrieve-a-p
 import { MetaPropertyFeedItem } from "../core/types/meta-catalog/meta-property-feed.types";
 
 export class MetaPropertyFeedFormatter {
-  static formatForMetaCatalog(properties: EasyBrokerPropertySummary[], detailedProperties: EasyBrokerPropertyDetails[]): MetaPropertyFeedItem[] {
+  static formatForMetaCatalog(
+    properties: EasyBrokerPropertySummary[],
+    detailedProperties: EasyBrokerPropertyDetails[]
+  ): MetaPropertyFeedItem[] {
     return properties.map((property, index) => {
       const detailedProperty = detailedProperties[index];
-      
+
+      const cleanDescription = (detailedProperty?.description || "")
+        .replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .substring(0, 5000);
+
       return {
-        home_listing_id: property.public_id,
-        name: property.title,
-        description: detailedProperty?.description || "",
+        home_listing_id: property.public_id || "",
+        name: property.title || "",
+        description: cleanDescription,
         availability: "available",
         price: property.operations[0]?.formatted_amount || "0 MXN",
-        property_type: property.property_type,
+        property_type: property.property_type || "",
         garden_type: "none",
         url: detailedProperty?.public_url || "",
-        num_baths: property.bathrooms,
-        num_beds: property.bedrooms,
+        num_baths: property.bathrooms || null,
+        num_beds: property.bedrooms || null,
         num_rooms: null,
         pet_policy: "",
-        area_size: property.construction_size,
-        land_area_size: property.lot_size,
-        parking_spaces: property.parking_spaces,
+        area_size: property.construction_size || null,
+        land_area_size: property.lot_size || null,
+        parking_spaces: property.parking_spaces || null,
         area_unit: "m2",
         year_built: detailedProperty?.age || "",
         "address.addr1": detailedProperty?.location?.street || "",
-        "address.city": detailedProperty?.location?.name?.split(",")[0] || "",
+        "address.city": detailedProperty?.location?.name?.split(",")[0]?.trim() || "",
         "address.region": detailedProperty?.location?.name?.split(",")[1]?.trim() || "",
         "address.country": "Mexico",
         "neighborhood[0]": "",
