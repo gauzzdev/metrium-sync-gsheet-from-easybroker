@@ -5,12 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sincronizar Easybroker con GSheet</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+      body {
+        scrollbar-width: thin;
+        scrollbar-color: oklch(63.7% 0.237 25.331) transparent;
+      }
+    </style>
   </head>
 
-  <body class="relative h-dvh w-dvw flex items-center justify-center p-4 font-mono text-white text-xs font-light">
+  <body class="relative h-dvh w-dvw flex items-center justify-center p-4 font-mono text-white text-xs font-light overflow-hidden">
     <div id="vanta-bg" class="fixed inset-0 -z-10"></div>
 
-    <div class="relative bg-black/50 border-red-500 border rounded-xl p-8 max-w-xl w-full z-10">
+    <div class="absolute bg-black/50 border-red-500 border rounded-xl p-8 max-w-[90dvw] sm:max-w-xl max-h-[90dvh] overflow-y-auto z-10">
       <div class="space-y-8">
         <div class="space-y-1 text-center">
           <p class="text-xl">Metrium | Utilidad de sincronización</p>
@@ -43,7 +50,8 @@
 
         <div>
           <p>
-            ¿Cómo obtener el ID de Google Sheets? Abre tu hoja de cálculo en Google Sheets y copia la parte del URL que se resalta aquí:
+            <span class="font-bold">¿Cómo obtener el ID de Google Sheets?</span>
+            Abre tu hoja de cálculo en Google Sheets y copia la parte del URL que se resalta aquí:
           </p>
           <br />
           <p class="break-words">
@@ -80,7 +88,7 @@
         scale: 1.0,
         scaleMobile: 1.0,
         color: 0x7f0000,
-        spacing: 3.0,
+        spacing: 2,
       });
 
       const syncButton = document.getElementById("syncButton");
