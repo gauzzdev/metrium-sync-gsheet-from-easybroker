@@ -7,43 +7,61 @@
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
 
-  <body class="relative h-dvh w-dvw flex items-center justify-center p-4 font-mono text-white">
+  <body class="relative h-dvh w-dvw flex items-center justify-center p-4 font-mono text-white text-xs font-light">
     <div id="vanta-bg" class="fixed inset-0 -z-10"></div>
 
-    <div class="relative bg-black/50 border-red-500 border rounded-xl p-8 max-w-xl w-full z-10 text-center">
-      <div class="space-y-4">
-        <div class="space-y-1">
+    <div class="relative bg-black/50 border-red-500 border rounded-xl p-8 max-w-xl w-full z-10">
+      <div class="space-y-8">
+        <div class="space-y-1 text-center">
           <p class="text-xl">Metrium | Utilidad de sincronización</p>
-
-          <p class="text-xs font-light">
-            Esta herramienta sincroniza los datos de Easybroker con el Google Sheets usado por la integración de Meta en Metrium.
+          <p>
+            Esta herramienta sincroniza los datos de las propiedades de la cuenta Easybroker de Metrium con la hoja de cálculo de Google
+            Sheets indicada. La hoja será reiniciada y se importarán los datos completos de las propiedades en el formato requerido para que
+            Meta actualice sus catálogos.
           </p>
         </div>
 
-        <div class="space-y-3">
-          <div class="text-left">
-            <label for="spreadsheetId" class="block text-sm font-light mb-2"> ID de Google Sheets: </label>
-            <input
-              type="text"
-              id="spreadsheetId"
-              class="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white text-sm placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
-              placeholder="Ingresa el ID del Google Sheets"
-              required
-            />
-            <p class="text-xs text-gray-400 mt-1">Ejemplo: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms</p>
-          </div>
-
-          <button
-            id="syncButton"
-            class="bg-red-900 border-red-500 border uppercase text-sm py-3 rounded-xl w-full hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            type="button"
-          >
-            Iniciar sincronización
-          </button>
+        <div>
+          <p>
+            <span class="font-bold">Importante:</span>
+            Para que esta herramienta pueda modificar la hoja de cálculo de Google Sheets, debes compartirla con permisos de edición con el
+            siguiente correo de servicio:
+          </p>
+          <p class="text-red-500">development-gauzz@sync-gsheet-from-easybroker.iam.gserviceaccount.com</p>
         </div>
+
+        <div class="space-y-2">
+          <label for="spreadsheetId"> ID de Google Sheets: </label>
+          <input
+            type="text"
+            id="spreadsheetId"
+            class="w-full px-4 py-2 bg-stone-900 border border-stone-600 rounded-md placeholder-stone-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+            placeholder="Ingresa el ID del Google Sheets"
+            required
+          />
+        </div>
+
+        <div>
+          <p>
+            ¿Cómo obtener el ID de Google Sheets? Abre tu hoja de cálculo en Google Sheets y copia la parte del URL que se resalta aquí:
+          </p>
+          <br />
+          <p class="break-words">
+            https://docs.google.com/spreadsheets/d/<span class="text-red-500">1_hsDhY7OFZT8YsNLAWlngfLMvFRzTuB1zsccjmqm1_A</span
+            >/edit?gid=0#gid=0
+          </p>
+        </div>
+
+        <button
+          id="syncButton"
+          class="bg-red-900 border-red-500 border uppercase text-sm p-4 rounded-md w-full hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          type="button"
+        >
+          Iniciar sincronización
+        </button>
       </div>
 
-      <div id="responseSection" class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200 hidden">
+      <div id="responseSection" class="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200 hidden">
         <p id="responseContent" class="whitespace-pre-wrap text-sm text-gray-800"></p>
       </div>
     </div>
