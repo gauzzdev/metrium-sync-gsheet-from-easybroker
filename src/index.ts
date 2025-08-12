@@ -47,11 +47,11 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
     const newSheet = await doc.addSheet({ title: "another sheet" });
     await newSheet.delete();
 
-    return buildResponse({ statusCode: 200, body: { message } });
+    return buildResponse({ event, statusCode: 200, body: { message } });
   } catch (error) {
     let message = errorMessages.defaultError;
     if (error instanceof Error) message += ` ${error.message}`;
 
-    return buildResponse({ statusCode: 500, body: { message } });
+    return buildResponse({ event, statusCode: 500, body: { message } });
   }
 };
