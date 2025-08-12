@@ -10,11 +10,15 @@ export class MetaPropertyFeedFormatter {
     return properties.map((property, index) => {
       const detailedProperty = detailedProperties[index];
 
+      // Clean description text - preserve line breaks but remove invalid characters
       const cleanDescription = (detailedProperty?.description || "")
-        .replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, "")
-        .replace(/\s+/g, " ")
+        .replace(/[^\x20-\x7E\u00A0-\uFFFF\r\n]/g, '') // Remove non-printable characters but keep line breaks
+        .replace(/\r\n/g, '\n') // Normalize line breaks to \n
+        .replace(/\r/g, '\n') // Convert remaining \r to \n
+        .replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with single space, but preserve line breaks
+        .replace(/\n{3,}/g, '\n\n') // Limit excessive line breaks to maximum 2
         .trim()
-        .substring(0, 5000);
+        .substring(0, 5000); // Limit to 5000 characters as per Meta requirements
 
       return {
         home_listing_id: property.public_id || "",

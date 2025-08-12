@@ -70,6 +70,39 @@
           />
         </div>
 
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-2">
+            <label for="startPage">Página de inicio:</label>
+            <input
+              type="number"
+              id="startPage"
+              min="1"
+              max="1000"
+              value="1"
+              class="w-full px-4 py-2 bg-stone-900 border border-stone-600 rounded-md placeholder-stone-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+              placeholder="1"
+              required
+            />
+          </div>
+          <div class="space-y-2">
+            <label for="endPage">Página final:</label>
+            <input
+              type="number"
+              id="endPage"
+              min="1"
+              max="1000"
+              value="1"
+              class="w-full px-4 py-2 bg-stone-900 border border-stone-600 rounded-md placeholder-stone-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+              placeholder="1"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="text-xs text-gray-400">
+          <p><span class="font-bold">Nota:</span> Máximo 10 páginas por consulta. Cada página contiene hasta 50 propiedades.</p>
+        </div>
+
         <div>
           <p>
             <span class="font-bold">¿Cómo obtener el ID de Google Sheets?</span>
@@ -116,20 +149,43 @@
       const syncButton = document.getElementById("syncButton");
       const buttonContent = document.getElementById("buttonContent");
       const spreadsheetIdInput = document.getElementById("spreadsheetId");
+      const startPageInput = document.getElementById("startPage");
+      const endPageInput = document.getElementById("endPage");
       const responseSection = document.getElementById("responseSection");
       const responseContent = document.getElementById("responseContent");
 
-      spreadsheetIdInput.addEventListener("input", () => {
-        syncButton.disabled = !spreadsheetIdInput.value.trim();
-      });
+      function validateInputs() {
+        const spreadsheetId = spreadsheetIdInput.value.trim();
+        const startPage = parseInt(startPageInput.value);
+        const endPage = parseInt(endPageInput.value);
+        
+        const isValid = spreadsheetId && 
+                       startPage >= 1 && 
+                       endPage >= startPage && 
+                       (endPage - startPage + 1) <= 10;
+        
+        syncButton.disabled = !isValid;
+      }
+
+      spreadsheetIdInput.addEventListener("input", validateInputs);
+      startPageInput.addEventListener("input", validateInputs);
+      endPageInput.addEventListener("input", validateInputs);
 
       syncButton.disabled = true;
 
       syncButton.addEventListener("click", async () => {
         const spreadsheetId = spreadsheetIdInput.value.trim();
+        const startPage = parseInt(startPageInput.value);
+        const endPage = parseInt(endPageInput.value);
 
         if (!spreadsheetId) {
           responseContent.textContent = "Error: Debes ingresar un ID de Google Sheets";
+          responseSection.classList.remove("hidden");
+          return;
+        }
+
+        if (startPage < 1 || endPage < startPage || (endPage - startPage + 1) > 10) {
+          responseContent.textContent = "Error: Rango de páginas inválido. Máximo 10 páginas y la página final debe ser mayor o igual a la inicial.";
           responseSection.classList.remove("hidden");
           return;
         }
@@ -145,7 +201,7 @@
           const res = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ spreadsheetId }),
+            body: JSON.stringify({ spreadsheetId, startPage, endPage }),
           });
 
           const body = await res.json();
@@ -159,7 +215,7 @@
           console.error(error);
         } finally {
           responseSection.classList.remove("hidden");
-          syncButton.disabled = !spreadsheetIdInput.value.trim();
+          validateInputs(); // Re-validate inputs to enable/disable button
           buttonContent.innerHTML = "Iniciar sincronización";
           buttonContent.classList.remove("flex", "items-center", "justify-center");
         }

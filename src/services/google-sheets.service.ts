@@ -41,8 +41,7 @@ export class MetaCatalogSheetsService {
 
   private async applyTextClipFormat(sheet: any, rowCount: number, columnCount: number): Promise<void> {
     try {
-      const range = `A1:${String.fromCharCode(64 + columnCount)}${rowCount}`;
-
+      // Apply OVERFLOW format instead of CLIP to preserve line breaks but keep fixed row height
       await sheet.batchUpdate([
         {
           repeatCell: {
@@ -55,7 +54,7 @@ export class MetaCatalogSheetsService {
             },
             cell: {
               userEnteredFormat: {
-                wrapStrategy: "CLIP",
+                wrapStrategy: "OVERFLOW_CELL",
                 verticalAlignment: "TOP",
               },
             },
@@ -63,12 +62,35 @@ export class MetaCatalogSheetsService {
           },
         },
       ]);
+
+      // Set fixed row heights to prevent auto-resizing
+      const rowRequests = [];
+      for (let i = 0; i < rowCount; i++) {
+        rowRequests.push({
+          updateDimensionProperties: {
+            range: {
+              sheetId: sheet.sheetId,
+              dimension: "ROWS",
+              startIndex: i,
+              endIndex: i + 1,
+            },
+            properties: {
+              pixelSize: 21, // Fixed height for single line
+            },
+            fields: "pixelSize",
+          },
+        });
+      }
+
+      if (rowRequests.length > 0) {
+        await sheet.batchUpdate(rowRequests);
+      }
     } catch (error) {
-      console.warn("Could not apply text clip format:", error);
+      console.warn("Could not apply text format:", error);
     }
   }
 
-  async insertMetaPropertyFeed(spreadsheetId: string, data: MetaPropertyFeedItem[]): Promise<void> {
+  async appendMetaPropertyFeed(spreadsheetId: string, data: MetaPropertyFeedItem[]): Promise<void> {
     const doc = new GoogleSpreadsheet(spreadsheetId, this.auth);
     await doc.loadInfo();
 
@@ -78,16 +100,20 @@ export class MetaCatalogSheetsService {
 
     const headers = Object.keys(data[0]);
     const requiredColumns = headers.length;
-    const requiredRows = data.length + 1;
+    const currentRows = sheet.rowCount;
+    const requiredRows = currentRows + data.length;
 
     await this.ensureSheetSize(sheet, requiredColumns, requiredRows);
 
-    await sheet.setHeaderRow(headers);
+    // Only set headers if sheet is empty
+    if (currentRows === 0 || sheet.headerValues.length === 0) {
+      await sheet.setHeaderRow(headers);
+    }
 
     const rowData = data.map((item) => Object.values(item).map((value) => (value === null ? "" : String(value))));
     await sheet.addRows(rowData);
 
-    await this.applyTextClipFormat(sheet, data.length + 1, headers.length);
+    await this.applyTextClipFormat(sheet, sheet.rowCount, headers.length);
   }
 
   async getMetaCatalogInfo(spreadsheetId: string): Promise<{ title: string; rowCount: number }> {
