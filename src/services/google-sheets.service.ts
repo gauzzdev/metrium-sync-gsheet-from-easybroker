@@ -39,25 +39,6 @@ export class MetaCatalogSheetsService {
     }
   }
 
-  private async setTextWrapping(sheet: GoogleSpreadsheetWorksheet, columnCount: number, rowCount: number): Promise<void> {
-    try {
-      const range = `A1:${String.fromCharCode(64 + columnCount)}${rowCount}`;
-      await sheet.loadCells(range);
-
-      for (let row = 0; row < rowCount; row++) {
-        for (let col = 0; col < columnCount; col++) {
-          const cell = sheet.getCell(row, col);
-          cell.wrapStrategy = "WRAP";
-          cell.verticalAlignment = "TOP";
-        }
-      }
-
-      await sheet.saveUpdatedCells();
-    } catch (error) {
-      console.warn("Could not apply text wrapping:", error);
-    }
-  }
-
   async appendMetaPropertyFeed(spreadsheetId: string, data: MetaPropertyFeedItem[]): Promise<void> {
     const doc = new GoogleSpreadsheet(spreadsheetId, this.auth);
     await doc.loadInfo();
@@ -90,8 +71,6 @@ export class MetaCatalogSheetsService {
     const rowData = data.map((item) => Object.values(item).map((value) => (value === null ? "" : String(value))));
     await sheet.addRows(rowData);
     await sheet.updateDimensionProperties("ROWS", { pixelSize: 21 } as any, { startIndex: 0, endIndex: sheet.rowCount });
-
-    await this.setTextWrapping(sheet, headers.length, sheet.rowCount);
   }
 
   async getMetaCatalogInfo(spreadsheetId: string): Promise<{ title: string; rowCount: number }> {
