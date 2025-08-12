@@ -103,8 +103,18 @@ export class MetaCatalogSheetsService {
 
     await this.ensureSheetSize(sheet, requiredColumns, requiredRows);
 
-    if (currentRows === 0 || sheet.headerValues.length === 0) {
+    if (currentRows === 0) {
       await sheet.setHeaderRow(headers);
+    } else {
+      try {
+        await sheet.loadHeaderRow();
+        if (!sheet.headerValues || sheet.headerValues.length === 0) {
+          await sheet.setHeaderRow(headers);
+        }
+      } catch (error) {
+        console.warn("Could not load headers, setting new ones:", error);
+        await sheet.setHeaderRow(headers);
+      }
     }
 
     const rowData = data.map((item) => Object.values(item).map((value) => (value === null ? "" : String(value))));
