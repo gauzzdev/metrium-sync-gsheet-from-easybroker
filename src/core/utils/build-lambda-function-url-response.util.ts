@@ -31,6 +31,6 @@ export const buildResponse = (params: BuildResponseParams): APIGatewayProxyStruc
       "Access-Control-Allow-Headers": "Content-Type",
       ...headers,
     },
-    body: typeof body === "string" ? body : JSON.stringify(body),
+    body: JSON.stringify(body),
   };
 };
