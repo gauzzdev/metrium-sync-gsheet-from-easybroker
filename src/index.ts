@@ -8,6 +8,8 @@ import { EasyBrokerListAllPropertiesResponse } from "./core/types/easybroker/lis
 
 export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStructuredResultV2> => {
   try {
+    if (event.requestContext.http.method === "OPTIONS") return buildResponse({ statusCode: 200 });
+
     const env = getEnv();
     const body = JSON.parse(event.body || "{}");
     const { spreadsheetId } = body;
@@ -48,15 +50,11 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
     const newSheet = await doc.addSheet({ title: "another sheet" });
     await newSheet.delete();
 
-    const response = buildResponse({ event, statusCode: 200, body: { message } });
-    console.log(ebresponse);
-    return response;
+    return buildResponse({ statusCode: 200, body: { message } });
   } catch (error) {
     let message = errorMessages.defaultError;
     if (error instanceof Error) message += ` ${error.message}`;
 
-    const response = buildResponse({ event, statusCode: 500, body: { message } });
-    console.error(response);
-    return response;
+    return buildResponse({ statusCode: 500, body: { message } });
   }
 };
