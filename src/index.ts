@@ -25,7 +25,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
       },
     };
 
-    const response: EasyBrokerListAllPropertiesResponse = await fetch(url, options).then((res) => res.json());
+    const ebresponse: EasyBrokerListAllPropertiesResponse = await fetch(url, options).then((res) => res.json());
 
     // Test input data on GSheet
 
@@ -48,11 +48,15 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
     const newSheet = await doc.addSheet({ title: "another sheet" });
     await newSheet.delete();
 
-    return buildResponse({ event, statusCode: 200, body: { message } });
+    const response = buildResponse({ event, statusCode: 200, body: { message } });
+    console.log(ebresponse);
+    return response;
   } catch (error) {
     let message = errorMessages.defaultError;
     if (error instanceof Error) message += ` ${error.message}`;
 
-    return buildResponse({ event, statusCode: 500, body: { message } });
+    const response = buildResponse({ event, statusCode: 500, body: { message } });
+    console.error(response);
+    return response;
   }
 };
