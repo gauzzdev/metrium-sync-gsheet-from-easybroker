@@ -1,20 +1,20 @@
-export interface EasyBrokerListAllPropertiesResponse {
+export interface EasyBrokerPropertiesListResponse {
   pagination: {
     limit: number;
     page: number;
     total: number;
     next_page?: string;
   };
-  content: EasyBrokerProperty[];
+  content: EasyBrokerPropertySummary[];
 }
 
-export interface EasyBrokerProperty {
+export interface EasyBrokerPropertySummary {
   public_id: string;
   title: string;
   title_image_full: string;
   title_image_thumb: string;
   location: string;
-  operations: EasyBrokerOperation[];
+  operations: EasyBrokerPropertyOperation[];
   bedrooms: number;
   bathrooms: number;
   parking_spaces: number;
@@ -27,16 +27,16 @@ export interface EasyBrokerProperty {
   share_commission: boolean;
 }
 
-export interface EasyBrokerOperation {
+export interface EasyBrokerPropertyOperation {
   type: string;
   amount: number;
   currency: string;
   formatted_amount: string;
-  commission?: EasyBrokerCommission;
+  commission?: EasyBrokerPropertyCommission;
   unit: string;
 }
 
-export type EasyBrokerCommission =
+export type EasyBrokerPropertyCommission =
   | {
       type: "percentage";
       value?: string;

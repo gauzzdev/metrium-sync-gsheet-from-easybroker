@@ -1,10 +1,10 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from "aws-lambda";
 import { errorMessages } from "./core/constants/messages.constants";
 import { buildResponse } from "./core/utils/build-lambda-function-url-response.util";
-import { GoogleSpreadsheet } from "google-spreadsheet";
-import { JWT } from "google-auth-library";
 import getEnv from "./config/environment.config";
-import { EasyBrokerListAllPropertiesResponse } from "./core/types/easybroker/list-all-properties.types";
+import { EasyBrokerService } from "./services/easybroker.service";
+import { MetaCatalogSheetsService } from "./services/google-sheets.service";
+import { MetaPropertyFeedFormatter } from "./services/property-formatter.service";
 
 export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStructuredResultV2> => {
   try {
@@ -15,42 +15,37 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
     const { spreadsheetId } = body;
     if (!spreadsheetId) throw new Error("spreadsheetId is required");
 
-    const message = "Hi there!";
-
-    // Test get properties
-    const url = "https://api.easybroker.com/v1/properties?page=1&limit=50";
-    const options = {
-      method: "GET",
-      headers: {
-        accept: "application/json",
-        "X-Authorization": env.EASYBROKER_API_KEY,
-      },
-    };
-
-    const ebresponse: EasyBrokerListAllPropertiesResponse = await fetch(url, options).then((res) => res.json());
-
-    // Test input data on GSheet
-
-    const serviceAccountAuth = new JWT({
-      email: env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key: env.GOOGLE_PRIVATE_KEY,
-      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    const easyBrokerService = new EasyBrokerService(env.EASYBROKER_API_KEY);
+    const metaCatalogService = new MetaCatalogSheetsService({
+      serviceAccountEmail: env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      privateKey: env.GOOGLE_PRIVATE_KEY,
     });
 
-    const doc = new GoogleSpreadsheet("1_hsDhY7OFZT8YsNLAWlngfLMvFRzTuB1zsccjmqm1_A", serviceAccountAuth);
+    console.log("Obteniendo todas las propiedades de EasyBroker...");
+    const properties = await easyBrokerService.getAllProperties();
+    console.log(`Se encontraron ${properties.length} propiedades`);
 
-    await doc.loadInfo();
-    console.log(doc.title);
-    await doc.updateProperties({ title: "testing" });
+    console.log("Obteniendo detalles de cada propiedad...");
+    const detailedProperties = await Promise.all(properties.map((property) => easyBrokerService.getPropertyDetails(property.public_id)));
 
-    const sheet = doc.sheetsByIndex[0];
-    console.log(sheet.title);
-    console.log(sheet.rowCount);
+    console.log("Formateando datos para Meta Catalog Feed...");
+    const metaFeedData = MetaPropertyFeedFormatter.formatForMetaCatalog(properties, detailedProperties);
 
-    const newSheet = await doc.addSheet({ title: "another sheet" });
-    await newSheet.delete();
+    console.log("Limpiando Meta Catalog Feed...");
+    await metaCatalogService.clearMetaCatalogFeed(spreadsheetId);
 
-    return buildResponse({ statusCode: 200, body: { message } });
+    console.log("Insertando datos del feed de propiedades...");
+    await metaCatalogService.insertMetaPropertyFeed(spreadsheetId, metaFeedData);
+
+    const catalogInfo = await metaCatalogService.getMetaCatalogInfo(spreadsheetId);
+
+    const message = `✅ Meta Catalog Feed sincronizado exitosamente!\n📊 Propiedades procesadas: ${properties.length}\n📋 Feed: ${catalogInfo.title}\n📝 Filas totales: ${catalogInfo.rowCount}`;
+    console.log(message);
+
+    return buildResponse({
+      statusCode: 200,
+      body: { message, propertiesCount: properties.length, catalogTitle: catalogInfo.title, totalRows: catalogInfo.rowCount },
+    });
   } catch (error) {
     console.error(error);
     let message = errorMessages.defaultError;
