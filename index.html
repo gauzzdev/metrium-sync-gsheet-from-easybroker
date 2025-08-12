@@ -5,31 +5,131 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sincronizar Easybroker con GSheet</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="icon"
+      href="https://images.icon-icons.com/4072/PNG/512/loop_multimedia_option_replay_repeat_arrow_sync_icon_258770.png"
+      type="image/png"
+    />
+
+    <style>
+      body {
+        scrollbar-width: thin;
+        scrollbar-color: oklch(63.7% 0.237 25.331) transparent;
+      }
+
+      .loading-dots::after {
+        content: "";
+        animation: dots 1.5s infinite;
+      }
+
+      @keyframes dots {
+        0%,
+        20% {
+          content: "";
+        }
+        40% {
+          content: ".";
+        }
+        60% {
+          content: "..";
+        }
+        80%,
+        100% {
+          content: "...";
+        }
+      }
+    </style>
   </head>
 
-  <body class="relative h-dvh w-dvw flex items-center justify-center p-4 font-mono text-white">
+  <body class="relative h-dvh w-dvw flex items-center justify-center p-4 font-mono text-white text-xs font-light overflow-hidden">
     <div id="vanta-bg" class="fixed inset-0 -z-10"></div>
 
-    <div class="relative bg-black/50 border-red-500 border rounded-xl p-8 max-w-xl w-full z-10 text-center">
-      <div class="space-y-4">
-        <div class="space-y-1">
+    <div class="absolute bg-black/50 border-red-500 border rounded-xl p-8 max-w-[90dvw] sm:max-w-xl max-h-[90dvh] overflow-y-auto z-10">
+      <div class="space-y-8">
+        <div class="space-y-1 text-center">
           <p class="text-xl">Metrium | Utilidad de sincronización</p>
-
-          <p class="text-xs font-light">
-            Esta herramienta sincroniza los datos de Easybroker con el Google Sheets usado por la integración de Meta en Metrium.
+          <p>
+            Esta herramienta sincroniza las propiedades de Easybroker (cuenta Metrium) con una hoja de Google Sheets, agregando los datos
+            nuevos al final para que Meta actualice sus catálogos.
           </p>
+        </div>
+
+        <div>
+          <p>
+            <span class="font-bold">Importante:</span>
+            Para que esta herramienta pueda modificar la hoja de cálculo de Google Sheets, debes compartirla con permisos de edición con el
+            siguiente correo de servicio:
+          </p>
+          <p class="text-red-500">%%GOOGLE_SERVICE_ACCOUNT_EMAIL%%</p>
+        </div>
+
+        <div class="space-y-2">
+          <label for="spreadsheetId"> ID de Google Sheets: </label>
+          <input
+            type="text"
+            id="spreadsheetId"
+            class="w-full px-4 py-2 bg-stone-900 border border-stone-600 rounded-md placeholder-stone-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+            placeholder="Ingresa el ID del Google Sheets"
+            required
+          />
+        </div>
+
+        <div>
+          <p>
+            <span class="font-bold">¿Cómo obtener el ID de Google Sheets?</span>
+            Abre tu hoja de cálculo en Google Sheets y copia la parte del URL que se resalta aquí:
+          </p>
+          <br />
+          <p class="break-words">
+            https://docs.google.com/spreadsheets/d/<span class="text-red-500">1_hsDhY7OFZT8YsNLAWlngfLMvFRzTuB1zsccjmqm1_A</span
+            >/edit?gid=0#gid=0
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label for="startPage">Página de inicio:</label>
+              <input
+                type="number"
+                id="startPage"
+                min="1"
+                max="1000"
+                value="1"
+                class="w-full px-4 py-2 bg-stone-900 border border-stone-600 rounded-md placeholder-stone-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                placeholder="1"
+                required
+              />
+            </div>
+
+            <div class="space-y-2">
+              <label for="endPage">Página final:</label>
+              <input
+                type="number"
+                id="endPage"
+                min="1"
+                max="1000"
+                value="5"
+                class="w-full px-4 py-2 bg-stone-900 border border-stone-600 rounded-md placeholder-stone-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                placeholder="1"
+                required
+              />
+            </div>
+          </div>
+
+          <p><span class="font-bold">Nota:</span> Máximo 10 páginas por consulta. Cada página contiene hasta 50 propiedades.</p>
         </div>
 
         <button
           id="syncButton"
-          class="bg-red-900 border-red-500 border uppercase text-sm py-3 rounded-xl w-full hover:bg-red-700 transition"
+          class="bg-red-900 border-red-500 border uppercase text-sm p-4 rounded-md w-full hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           type="button"
         >
-          Iniciar sincronización
+          <span id="buttonContent">Iniciar sincronización</span>
         </button>
       </div>
 
-      <div id="responseSection" class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200 hidden">
+      <div id="responseSection" class="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200 hidden">
         <p id="responseContent" class="whitespace-pre-wrap text-sm text-gray-800"></p>
       </div>
     </div>
@@ -48,21 +148,63 @@
         scale: 1.0,
         scaleMobile: 1.0,
         color: 0x7f0000,
+        spacing: 2,
       });
 
       const syncButton = document.getElementById("syncButton");
+      const buttonContent = document.getElementById("buttonContent");
+      const spreadsheetIdInput = document.getElementById("spreadsheetId");
+      const startPageInput = document.getElementById("startPage");
+      const endPageInput = document.getElementById("endPage");
       const responseSection = document.getElementById("responseSection");
       const responseContent = document.getElementById("responseContent");
 
+      function validateInputs() {
+        const spreadsheetId = spreadsheetIdInput.value.trim();
+        const startPage = parseInt(startPageInput.value);
+        const endPage = parseInt(endPageInput.value);
+
+        const isValid = spreadsheetId && startPage >= 1 && endPage >= startPage && endPage - startPage + 1 <= 10;
+
+        syncButton.disabled = !isValid;
+      }
+
+      spreadsheetIdInput.addEventListener("input", validateInputs);
+      startPageInput.addEventListener("input", validateInputs);
+      endPageInput.addEventListener("input", validateInputs);
+
+      syncButton.disabled = true;
+
       syncButton.addEventListener("click", async () => {
+        const spreadsheetId = spreadsheetIdInput.value.trim();
+        const startPage = parseInt(startPageInput.value);
+        const endPage = parseInt(endPageInput.value);
+
+        if (!spreadsheetId) {
+          responseContent.textContent = "Error: Debes ingresar un ID de Google Sheets";
+          responseSection.classList.remove("hidden");
+          return;
+        }
+
+        if (startPage < 1 || endPage < startPage || endPage - startPage + 1 > 10) {
+          responseContent.textContent =
+            "Error: Rango de páginas inválido. Máximo 10 páginas y la página final debe ser mayor o igual a la inicial.";
+          responseSection.classList.remove("hidden");
+          return;
+        }
+
         responseSection.classList.add("hidden");
         responseContent.textContent = "";
+        syncButton.disabled = true;
+        buttonContent.innerHTML = 'Sincronizando<span class="loading-dots"></span>';
+        buttonContent.classList.add("flex", "items-center", "justify-center");
 
         try {
-          const res = await fetch("https://3a4eeoseundplud3llhiatycp40husfx.lambda-url.us-east-1.on.aws/", {
+          const endpoint = "%%LAMBDA_URL%%";
+          const res = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({}),
+            body: JSON.stringify({ spreadsheetId, startPage, endPage }),
           });
 
           const body = await res.json();
@@ -76,6 +218,9 @@
           console.error(error);
         } finally {
           responseSection.classList.remove("hidden");
+          validateInputs();
+          buttonContent.innerHTML = "Iniciar sincronización";
+          buttonContent.classList.remove("flex", "items-center", "justify-center");
         }
       });
     </script>

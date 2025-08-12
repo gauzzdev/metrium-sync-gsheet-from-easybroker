@@ -1,52 +1,66 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from "aws-lambda";
-import env from "./config/environment.config";
 import { errorMessages } from "./core/constants/messages.constants";
 import { buildResponse } from "./core/utils/build-lambda-function-url-response.util";
-import { GoogleSpreadsheet } from "google-spreadsheet";
-import { JWT } from "google-auth-library";
+import getEnv from "./config/environment.config";
+import { EasyBrokerService } from "./services/easybroker.service";
+import { MetaCatalogSheetsService } from "./services/google-sheets.service";
+import { MetaPropertyFeedFormatter } from "./services/property-formatter.service";
 
 export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStructuredResultV2> => {
   try {
-    const message = "Hi there!";
+    if (event.requestContext.http.method === "OPTIONS") return buildResponse({ statusCode: 200 });
 
-    // Test get properties
-    const url = "https://api.easybroker.com/v1/properties?page=1&limit=50";
-    const options = {
-      method: "GET",
-      headers: {
-        accept: "application/json",
-        "X-Authorization": env.EASYBROKER_API_KEY,
-      },
-    };
+    const env = getEnv();
+    const body = JSON.parse(event.body || "{}");
+    const { spreadsheetId, startPage, endPage } = body;
+    if (!spreadsheetId) throw new Error("spreadsheetId is required");
+    if (!startPage || !endPage) throw new Error("startPage and endPage are required");
+    
+    const startPageNum = parseInt(startPage);
+    const endPageNum = parseInt(endPage);
+    
+    if (startPageNum < 1 || endPageNum < startPageNum || (endPageNum - startPageNum + 1) > 10) {
+      throw new Error("Invalid page range. Maximum 10 pages and end page must be >= start page");
+    }
 
-    const response = await fetch(url, options);
-    console.log(await response.json());
-
-    // Test input data on GSheet
-
-    const serviceAccountAuth = new JWT({
-      email: env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key: env.GOOGLE_PRIVATE_KEY,
-      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    const easyBrokerService = new EasyBrokerService(env.EASYBROKER_API_KEY);
+    const metaCatalogService = new MetaCatalogSheetsService({
+      serviceAccountEmail: env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      privateKey: env.GOOGLE_PRIVATE_KEY,
     });
 
-    const doc = new GoogleSpreadsheet("shit id from url", serviceAccountAuth);
+    console.log(`Obteniendo propiedades de EasyBroker (páginas ${startPageNum}-${endPageNum})...`);
+    const properties = await easyBrokerService.getPropertiesByPageRange(startPageNum, endPageNum);
+    console.log(`Se encontraron ${properties.length} propiedades`);
 
-    await doc.loadInfo();
-    console.log(doc.title);
-    await doc.updateProperties({ title: "testing" });
+    console.log("Obteniendo detalles de cada propiedad...");
+    const detailedProperties = await Promise.all(properties.map((property) => easyBrokerService.getPropertyDetails(property.public_id)));
 
-    const sheet = doc.sheetsByIndex[0];
-    console.log(sheet.title);
-    console.log(sheet.rowCount);
+    console.log("Formateando datos para Meta Catalog Feed...");
+    const metaFeedData = MetaPropertyFeedFormatter.formatForMetaCatalog(properties, detailedProperties);
 
-    const newSheet = await doc.addSheet({ title: "another sheet" });
-    await newSheet.delete();
+    console.log("Agregando datos al final de la lista existente...");
+    await metaCatalogService.appendMetaPropertyFeed(spreadsheetId, metaFeedData);
 
-    return buildResponse({ statusCode: 200, body: { message } });
+    const catalogInfo = await metaCatalogService.getMetaCatalogInfo(spreadsheetId);
+
+    const message = `✅ Propiedades agregadas exitosamente!\n📊 Propiedades añadidas: ${properties.length} (páginas ${startPageNum}-${endPageNum})\n📋 Feed: ${catalogInfo.title}\n📝 Filas totales en el sheet: ${catalogInfo.rowCount}`;
+    console.log(message);
+
+    return buildResponse({
+      statusCode: 200,
+      body: { 
+        message, 
+        propertiesAdded: properties.length, 
+        pageRange: `${startPageNum}-${endPageNum}`,
+        catalogTitle: catalogInfo.title, 
+        totalRows: catalogInfo.rowCount 
+      },
+    });
   } catch (error) {
+    console.error(error);
     let message = errorMessages.defaultError;
-    if (error instanceof Error) message += `: ${error.message}`;
+    if (error instanceof Error) message += ` ${error.message}`;
 
     return buildResponse({ statusCode: 500, body: { message } });
   }

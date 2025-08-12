@@ -1,0 +1,60 @@
+name: Deploy to AWS Lambda
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm i
+
+      - name: Build project
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Wait for Lambda action to finish (before environment config)
+        run: |
+          while aws lambda get-function-configuration --function-name metrium-sync-gsheet-from-easybroker | grep -q '"LastUpdateStatus": "InProgress"'; do
+            echo "Waiting for previous update to finish..."
+            sleep 5
+          done
+
+      - name: Update Lambda environment variables
+        run: |
+          aws lambda update-function-configuration \
+            --function-name metrium-sync-gsheet-from-easybroker \
+            --environment "{\"Variables\":{\"EASYBROKER_API_KEY\":\"${{ secrets.EASYBROKER_API_KEY }}\",\"GOOGLE_SERVICE_ACCOUNT_EMAIL\":\"${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}\",\"GOOGLE_PRIVATE_KEY\":\"${{ secrets.GOOGLE_PRIVATE_KEY }}\"}}"
+
+      - name: Wait for Lambda action to finish (before updating code)
+        run: |
+          while aws lambda get-function-configuration --function-name metrium-sync-gsheet-from-easybroker | grep -q '"LastUpdateStatus": "InProgress"'; do
+            echo "Waiting for environment update to finish..."
+            sleep 5
+          done
+
+      - name: Deploy to Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name arn:aws:lambda:us-east-1:817814267623:function:metrium-sync-gsheet-from-easybroker \
+            --zip-file fileb://dist.zip

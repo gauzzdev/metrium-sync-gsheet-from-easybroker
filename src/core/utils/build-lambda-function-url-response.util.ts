@@ -3,14 +3,14 @@ import { ContentType } from "../enums/lambda.enums";
 
 type BuildResponseParams = Omit<APIGatewayProxyStructuredResultV2, "body"> & {
   contentType?: ContentType;
-  body: object | string;
+  body?: object;
 };
 
 export const buildResponse = (params: BuildResponseParams): APIGatewayProxyStructuredResultV2 => {
-  const { contentType = ContentType.JSON, headers, body } = params;
+  const { contentType = ContentType.JSON, headers, body, statusCode = 200 } = params;
 
-  return {
-    ...params,
+  const response = {
+    statusCode,
     headers: {
       "Content-Type": contentType,
       "Access-Control-Allow-Origin": "*",
@@ -18,6 +18,9 @@ export const buildResponse = (params: BuildResponseParams): APIGatewayProxyStruc
       "Access-Control-Allow-Headers": "Content-Type",
       ...headers,
     },
-    body: JSON.stringify(body),
+    ...(body ? { body: JSON.stringify(body) } : {}),
   };
+
+  console.log(response);
+  return response;
 };

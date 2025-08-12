@@ -1,0 +1,34 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - index.html
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Replace API endpoint placeholder in index.html
+        run: |
+          sed -i "s|%%LAMBDA_URL%%|${{ secrets.LAMBDA_URL }}|g" index.html
+
+      - name: Replace Google Service Account Email placeholder in index.html
+        run: |
+          sed -i "s|%%GOOGLE_SERVICE_ACCOUNT_EMAIL%%|${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}|g" index.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
+          keep_files: false
