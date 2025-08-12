@@ -15,7 +15,7 @@ export const buildResponse = (params: BuildResponseParams): APIGatewayProxyStruc
       statusCode: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "*",
+        "Access-Control-Allow-Methods": "OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
         ...headers,
       },
@@ -27,7 +27,7 @@ export const buildResponse = (params: BuildResponseParams): APIGatewayProxyStruc
     headers: {
       "Content-Type": contentType,
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "*",
+      "Access-Control-Allow-Methods": "POST",
       "Access-Control-Allow-Headers": "Content-Type",
       ...headers,
     },

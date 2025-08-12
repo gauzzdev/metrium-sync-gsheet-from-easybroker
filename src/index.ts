@@ -9,7 +9,8 @@ import { EasyBrokerListAllPropertiesResponse } from "./core/types/easybroker/lis
 export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStructuredResultV2> => {
   try {
     const env = getEnv();
-    const spreadsheetId = event.pathParameters?.spreadsheetId;
+    const body = JSON.parse(event.body || "{}");
+    const { spreadsheetId } = body;
     if (!spreadsheetId) throw new Error("spreadsheetId is required");
 
     const message = "Hi there!";
