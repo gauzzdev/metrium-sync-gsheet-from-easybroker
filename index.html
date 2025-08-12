@@ -158,12 +158,9 @@
         const spreadsheetId = spreadsheetIdInput.value.trim();
         const startPage = parseInt(startPageInput.value);
         const endPage = parseInt(endPageInput.value);
-        
-        const isValid = spreadsheetId && 
-                       startPage >= 1 && 
-                       endPage >= startPage && 
-                       (endPage - startPage + 1) <= 10;
-        
+
+        const isValid = spreadsheetId && startPage >= 1 && endPage >= startPage && endPage - startPage + 1 <= 10;
+
         syncButton.disabled = !isValid;
       }
 
@@ -184,8 +181,9 @@
           return;
         }
 
-        if (startPage < 1 || endPage < startPage || (endPage - startPage + 1) > 10) {
-          responseContent.textContent = "Error: Rango de páginas inválido. Máximo 10 páginas y la página final debe ser mayor o igual a la inicial.";
+        if (startPage < 1 || endPage < startPage || endPage - startPage + 1 > 10) {
+          responseContent.textContent =
+            "Error: Rango de páginas inválido. Máximo 10 páginas y la página final debe ser mayor o igual a la inicial.";
           responseSection.classList.remove("hidden");
           return;
         }
@@ -215,7 +213,7 @@
           console.error(error);
         } finally {
           responseSection.classList.remove("hidden");
-          validateInputs(); // Re-validate inputs to enable/disable button
+          validateInputs();
           buttonContent.innerHTML = "Iniciar sincronización";
           buttonContent.classList.remove("flex", "items-center", "justify-center");
         }

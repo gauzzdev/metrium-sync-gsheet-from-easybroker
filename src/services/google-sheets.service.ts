@@ -41,7 +41,6 @@ export class MetaCatalogSheetsService {
 
   private async applyTextClipFormat(sheet: any, rowCount: number, columnCount: number): Promise<void> {
     try {
-      // Apply OVERFLOW format instead of CLIP to preserve line breaks but keep fixed row height
       await sheet.batchUpdate([
         {
           repeatCell: {
@@ -63,7 +62,6 @@ export class MetaCatalogSheetsService {
         },
       ]);
 
-      // Set fixed row heights to prevent auto-resizing
       const rowRequests = [];
       for (let i = 0; i < rowCount; i++) {
         rowRequests.push({
@@ -75,7 +73,7 @@ export class MetaCatalogSheetsService {
               endIndex: i + 1,
             },
             properties: {
-              pixelSize: 21, // Fixed height for single line
+              pixelSize: 21,
             },
             fields: "pixelSize",
           },
@@ -105,7 +103,6 @@ export class MetaCatalogSheetsService {
 
     await this.ensureSheetSize(sheet, requiredColumns, requiredRows);
 
-    // Only set headers if sheet is empty
     if (currentRows === 0 || sheet.headerValues.length === 0) {
       await sheet.setHeaderRow(headers);
     }

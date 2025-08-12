@@ -11,9 +11,8 @@ export class EasyBrokerService {
 
   async getPropertiesByPageRange(startPage: number = 1, endPage: number = 1): Promise<EasyBrokerPropertySummary[]> {
     const allProperties: EasyBrokerPropertySummary[] = [];
-    
-    // Validate page range
-    if (startPage < 1 || endPage < startPage || (endPage - startPage + 1) > 10) {
+
+    if (startPage < 1 || endPage < startPage || endPage - startPage + 1 > 10) {
       throw new Error("Invalid page range. Maximum 10 pages and end page must be >= start page");
     }
 
@@ -30,10 +29,9 @@ export class EasyBrokerService {
       try {
         const response: EasyBrokerPropertiesListResponse = await fetch(url, options).then((res) => res.json());
         allProperties.push(...response.content);
-        
+
         console.log(`Página ${page} procesada: ${response.content.length} propiedades`);
-        
-        // If no more pages available, break early
+
         if (!response.pagination.next_page) {
           console.log(`No hay más páginas después de la página ${page}`);
           break;
