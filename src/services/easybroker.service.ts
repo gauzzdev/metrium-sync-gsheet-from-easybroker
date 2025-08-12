@@ -13,8 +13,9 @@ export class EasyBrokerService {
     const allProperties: EasyBrokerPropertySummary[] = [];
     let page = 1;
     let hasMorePages = true;
+    const pagesLimit = 5;
 
-    while (hasMorePages) {
+    while (hasMorePages && page <= pagesLimit) {
       const url = `${this.baseUrl}/properties?page=${page}&limit=50`;
       const options = {
         method: "GET",
@@ -26,9 +27,9 @@ export class EasyBrokerService {
 
       try {
         const response: EasyBrokerPropertiesListResponse = await fetch(url, options).then((res) => res.json());
-        
+
         allProperties.push(...response.content);
-        
+
         hasMorePages = !!response.pagination.next_page;
         page++;
       } catch (error) {
