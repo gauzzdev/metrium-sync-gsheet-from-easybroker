@@ -53,7 +53,7 @@ export class MetaCatalogSheetsService {
             },
             cell: {
               userEnteredFormat: {
-                wrapStrategy: "OVERFLOW_CELL",
+                wrapStrategy: "WRAP",
                 verticalAlignment: "TOP",
               },
             },
@@ -73,7 +73,7 @@ export class MetaCatalogSheetsService {
               endIndex: i + 1,
             },
             properties: {
-              pixelSize: 21,
+              pixelSize: 120,
             },
             fields: "pixelSize",
           },
