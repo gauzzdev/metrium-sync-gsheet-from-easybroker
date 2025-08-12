@@ -43,15 +43,15 @@ export class MetaCatalogSheetsService {
     try {
       const range = `A1:${String.fromCharCode(64 + columnCount)}${rowCount}`;
       await sheet.loadCells(range);
-      
+
       for (let row = 0; row < rowCount; row++) {
         for (let col = 0; col < columnCount; col++) {
           const cell = sheet.getCell(row, col);
-          cell.wrapStrategy = 'WRAP';
-          cell.verticalAlignment = 'TOP';
+          cell.wrapStrategy = "WRAP";
+          cell.verticalAlignment = "TOP";
         }
       }
-      
+
       await sheet.saveUpdatedCells();
     } catch (error) {
       console.warn("Could not apply text wrapping:", error);
@@ -89,6 +89,7 @@ export class MetaCatalogSheetsService {
 
     const rowData = data.map((item) => Object.values(item).map((value) => (value === null ? "" : String(value))));
     await sheet.addRows(rowData);
+    await sheet.updateDimensionProperties("ROWS", { pixelSize: 21 } as any, { startIndex: 0, endIndex: sheet.rowCount });
 
     await this.setTextWrapping(sheet, headers.length, sheet.rowCount);
   }
