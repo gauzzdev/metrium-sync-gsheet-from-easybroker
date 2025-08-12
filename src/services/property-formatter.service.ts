@@ -14,8 +14,6 @@ export class MetaPropertyFeedFormatter {
         .replace(/[^\x20-\x7E\u00A0-\uFFFF\r\n]/g, "")
         .replace(/\r\n/g, "\n")
         .replace(/\r/g, "\n")
-        .replace(/[ \t]+/g, " ")
-        .replace(/\n{3,}/g, "\n\n")
         .trim()
         .substring(0, 5000);
 
