@@ -79,6 +79,7 @@ export class MetaCatalogSheetsService {
     await doc.loadInfo();
 
     const sheet = doc.sheetsByIndex[0];
+    await doc.loadInfo();
 
     return {
       title: doc.title,
