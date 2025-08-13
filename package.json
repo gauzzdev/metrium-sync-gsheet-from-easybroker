@@ -1,0 +1,25 @@
+{
+  "name": "metrium-sync-gsheet-from-easybroker",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "clean": "rm -rf dist dist.zip node_modules",
+    "test": "tsx scripts/interactive-tests-runner.script.ts ./tests"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.152",
+    "@types/node": "^24.0.7",
+    "archiver": "^7.0.1",
+    "esbuild": "^0.25.5",
+    "inquirer": "^12.9.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "envalid": "^8.0.0",
+    "google-auth-library": "^10.2.1",
+    "google-spreadsheet": "^5.0.2"
+  }
+}

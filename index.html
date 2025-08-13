@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sincronizar Easybroker con GSheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="relative h-dvh w-dvw flex items-center justify-center p-4 font-mono text-white">
+    <div id="vanta-bg" class="fixed inset-0 -z-10"></div>
+
+    <div class="relative bg-black/50 border-red-500 border rounded-xl p-8 max-w-xl w-full z-10 text-center">
+      <div class="space-y-4">
+        <div class="space-y-1">
+          <p class="text-xl">Metrium | Utilidad de sincronización</p>
+
+          <p class="text-xs font-light">
+            Esta herramienta sincroniza los datos de Easybroker con el Google Sheets usado por la integración de Meta en Metrium.
+          </p>
+        </div>
+
+        <button
+          id="syncButton"
+          class="bg-red-900 border-red-500 border uppercase text-sm py-3 rounded-xl w-full hover:bg-red-700 transition"
+          type="button"
+        >
+          Iniciar sincronización
+        </button>
+      </div>
+
+      <div id="responseSection" class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200 hidden">
+        <p id="responseContent" class="whitespace-pre-wrap text-sm text-gray-800"></p>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.6.0/lib/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.trunk.min.js"></script>
+
+    <script>
+      VANTA.TRUNK({
+        el: "#vanta-bg",
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.0,
+        minWidth: 200.0,
+        scale: 1.0,
+        scaleMobile: 1.0,
+        color: 0x7f0000,
+      });
+
+      const syncButton = document.getElementById("syncButton");
+      const responseSection = document.getElementById("responseSection");
+      const responseContent = document.getElementById("responseContent");
+
+      syncButton.addEventListener("click", async () => {
+        responseSection.classList.add("hidden");
+        responseContent.textContent = "";
+
+        try {
+          const res = await fetch("https://3a4eeoseundplud3llhiatycp40husfx.lambda-url.us-east-1.on.aws/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+
+          const body = await res.json();
+
+          const status = res.status >= 200 && res.status < 300 ? "Éxito" : "Error";
+          let message = body.message ?? "Sin mensaje";
+
+          responseContent.textContent = `Estatus: ${status}\nMensaje: ${message}`;
+        } catch (error) {
+          responseContent.textContent = "Ha ocurrido un error.";
+          console.error(error);
+        } finally {
+          responseSection.classList.remove("hidden");
+        }
+      });
+    </script>
+  </body>
+</html>
