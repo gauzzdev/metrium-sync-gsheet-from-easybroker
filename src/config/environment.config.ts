@@ -1,6 +1,6 @@
 import { cleanEnv, str } from "envalid";
 import dotenv from "dotenv";
-import { errorMessages } from "../core/constants/messages.constants";
+import { userMessages } from "../core/constants/messages.constants";
 
 dotenv.config();
 
@@ -14,7 +14,7 @@ const getEnv = () => {
     },
     {
       reporter: ({ errors }) => {
-        if (Object.keys(errors).length > 0) throw new Error(errorMessages.missingEnv);
+        if (Object.keys(errors).length > 0) throw new Error(userMessages.errors.missingEnv);
       },
     }
   );
