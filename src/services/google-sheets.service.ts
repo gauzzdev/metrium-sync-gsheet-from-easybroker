@@ -79,11 +79,11 @@ export class MetaCatalogSheetsService {
     await doc.loadInfo();
 
     const sheet = doc.sheetsByIndex[0];
-    await doc.loadInfo();
+    const rows = await sheet.getRows();
 
     return {
       title: doc.title,
-      rowCount: sheet.rowCount,
+      rowCount: rows.length + 1,
     };
   }
 }
