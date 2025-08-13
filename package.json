@@ -17,9 +17,11 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.2",
     "dotenv": "^16.6.1",
     "envalid": "^8.0.0",
     "google-auth-library": "^10.2.1",
-    "google-spreadsheet": "^5.0.2"
+    "google-spreadsheet": "^5.0.2",
+    "zod": "^3.25.76"
   }
 }
