@@ -44,7 +44,7 @@
   <body class="relative h-dvh w-dvw flex items-center justify-center p-4 font-mono text-white text-xs font-light overflow-hidden">
     <div id="vanta-bg" class="fixed inset-0 -z-10"></div>
 
-    <div class="absolute bg-black/50 border-red-500 border rounded-xl p-8 max-w-[90dvw] sm:max-w-xl max-h-[90dvh] overflow-y-auto z-10">
+    <div class="absolute bg-black/50 border-red-500 border rounded-xl p-8 max-w-[90dvw] sm:max-w-2xl max-h-[90dvh] overflow-y-auto z-10">
       <div class="space-y-8">
         <div class="space-y-1 text-center">
           <p class="text-xl">Metrium | Utilidad de sincronización</p>
@@ -72,6 +72,17 @@
             placeholder="Ingresa el ID del Google Sheets"
             required
           />
+
+          <div class="flex items-center space-x-3 mt-3">
+            <input
+              type="checkbox"
+              id="resetSpreadsheet"
+              class="w-4 h-4 text-red-500 bg-stone-900 border border-stone-600 rounded focus:ring-red-500 focus:ring-2 accent-red-500"
+            />
+            <label for="resetSpreadsheet" class="text-sm font-medium">
+              Resetear Hoja de Cálculo (eliminar todos los datos existentes antes de importar)
+            </label>
+          </div>
         </div>
 
         <div>
@@ -101,7 +112,10 @@
             <option value="rented">Rentadas</option>
             <option value="suspended">Suspendidas</option>
           </select>
-          <p><span class="font-bold">Nota:</span> Mantén presionado Ctrl (Windows) o Cmd (Mac) para seleccionar múltiples estatus. Se obtendrán todas las propiedades con los estatus seleccionados.</p>
+          <p>
+            <span class="font-bold">Nota:</span> Mantén presionado Ctrl (Windows) o Cmd (Mac) para seleccionar múltiples estatus. Se
+            obtendrán todas las propiedades con los estatus seleccionados.
+          </p>
         </div>
 
         <div class="space-y-2">
@@ -131,7 +145,10 @@
             <option value="Terreno industrial">Terreno industrial</option>
             <option value="Villa">Villa</option>
           </select>
-          <p><span class="font-bold">Nota:</span> Si no seleccionas ningún tipo, se obtendrán todos los tipos de propiedades. Usa Ctrl (Windows) o Cmd (Mac) para selección múltiple.</p>
+          <p>
+            <span class="font-bold">Nota:</span> Si no seleccionas ningún tipo, se obtendrán todos los tipos de propiedades. Usa Ctrl
+            (Windows) o Cmd (Mac) para selección múltiple.
+          </p>
         </div>
 
         <button
@@ -162,12 +179,13 @@
         scale: 1.0,
         scaleMobile: 1.0,
         color: 0x7f0000,
-        spacing: 2,
+        spacing: 3,
       });
 
       const syncButton = document.getElementById("syncButton");
       const buttonContent = document.getElementById("buttonContent");
       const spreadsheetIdInput = document.getElementById("spreadsheetId");
+      const resetSpreadsheetCheckbox = document.getElementById("resetSpreadsheet");
       const statusesSelect = document.getElementById("statuses");
       const propertyTypesSelect = document.getElementById("propertyTypes");
       const responseSection = document.getElementById("responseSection");
@@ -175,7 +193,7 @@
 
       function validateInputs() {
         const spreadsheetId = spreadsheetIdInput.value.trim();
-        const selectedStatuses = Array.from(statusesSelect.selectedOptions).map(option => option.value);
+        const selectedStatuses = Array.from(statusesSelect.selectedOptions).map((option) => option.value);
 
         const isValid = spreadsheetId && selectedStatuses.length > 0;
 
@@ -190,8 +208,9 @@
 
       syncButton.addEventListener("click", async () => {
         const spreadsheetId = spreadsheetIdInput.value.trim();
-        const selectedStatuses = Array.from(statusesSelect.selectedOptions).map(option => option.value);
-        const selectedPropertyTypes = Array.from(propertyTypesSelect.selectedOptions).map(option => option.value);
+        const resetSpreadsheet = resetSpreadsheetCheckbox.checked;
+        const selectedStatuses = Array.from(statusesSelect.selectedOptions).map((option) => option.value);
+        const selectedPropertyTypes = Array.from(propertyTypesSelect.selectedOptions).map((option) => option.value);
 
         if (!spreadsheetId) {
           responseContent.textContent = "Error: Debes ingresar un ID de Google Sheets";
@@ -208,17 +227,19 @@
         responseSection.classList.add("hidden");
         responseContent.textContent = "";
         syncButton.disabled = true;
-        buttonContent.innerHTML = 'Sincronizando todas las propiedades<span class="loading-dots"></span>';
+        const loadingText = resetSpreadsheet ? "Reseteando y sincronizando propiedades" : "Sincronizando todas las propiedades";
+        buttonContent.innerHTML = `${loadingText}<span class="loading-dots"></span>`;
         buttonContent.classList.add("flex", "items-center", "justify-center");
 
         try {
           const endpoint = "https://3a4eeoseundplud3llhiatycp40husfx.lambda-url.us-east-1.on.aws/";
-          const requestBody = { 
-            spreadsheetId, 
+          const requestBody = {
+            spreadsheetId,
+            resetSpreadsheet,
             statuses: selectedStatuses,
-            propertyTypes: selectedPropertyTypes
+            propertyTypes: selectedPropertyTypes,
           };
-          
+
           const res = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },

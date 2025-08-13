@@ -12,7 +12,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
 
     const env = getEnv();
     const body = JSON.parse(event.body || "{}");
-    const { spreadsheetId, statuses = ["published"], propertyTypes = [] } = body;
+    const { spreadsheetId, statuses = ["published"], propertyTypes = [], resetSpreadsheet = false } = body;
 
     if (!spreadsheetId) throw new Error(userMessages.errors.spreadsheetRequired);
 
@@ -62,6 +62,11 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
 
     console.log(devMessages.logs.formattingData);
     const metaFeedData = MetaPropertyFeedFormatter.formatForMetaCatalog(properties, detailedProperties);
+
+    if (resetSpreadsheet) {
+      console.log(devMessages.logs.resettingSpreadsheet);
+      await metaCatalogService.clearMetaCatalogFeed(spreadsheetId);
+    }
 
     console.log(devMessages.logs.appendingData);
     await metaCatalogService.appendMetaPropertyFeed(spreadsheetId, metaFeedData);

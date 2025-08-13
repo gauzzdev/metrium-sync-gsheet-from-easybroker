@@ -26,6 +26,7 @@ export const devMessages = {
     propertiesFound: (count: number) => `Found ${count} properties`,
     fetchingDetails: "Fetching details for each property...",
     formattingData: "Formatting data for Meta Catalog Feed...",
+    resettingSpreadsheet: "Clearing spreadsheet data...",
     appendingData: "Appending data to existing list...",
     pageProcessed: (page: number, count: number) => `Page ${page} processed: ${count} properties`,
     allPagesProcessed: (totalPages: number, totalProperties: number) => `All ${totalPages} pages processed. Total properties fetched: ${totalProperties}`,
