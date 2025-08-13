@@ -12,16 +12,40 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
 
     const env = getEnv();
     const body = JSON.parse(event.body || "{}");
-    const { spreadsheetId, startPage, endPage } = body;
+    const { spreadsheetId, statuses = ["published"], propertyTypes = [], resetSpreadsheet = false } = body;
+
     if (!spreadsheetId) throw new Error(userMessages.errors.spreadsheetRequired);
-    if (!startPage || !endPage) throw new Error(userMessages.errors.pagesRequired);
-    
-    const startPageNum = parseInt(startPage);
-    const endPageNum = parseInt(endPage);
-    
-    if (startPageNum < 1 || endPageNum < startPageNum || (endPageNum - startPageNum + 1) > 10) {
-      throw new Error(userMessages.errors.invalidPageRange);
-    }
+
+    const validStatuses = ["published", "not_published", "reserved", "sold", "rented", "suspended"];
+    const statusArray = Array.isArray(statuses) ? statuses : [statuses];
+
+    if (!statusArray.every((status) => validStatuses.includes(status))) throw new Error(userMessages.errors.invalidStatus(validStatuses));
+
+    const validPropertyTypes = [
+      "Bodega comercial",
+      "Bodega industrial",
+      "Casa",
+      "Casa con uso de suelo",
+      "Casa en condominio",
+      "Departamento",
+      "Edificio",
+      "Huerta",
+      "Local comercial",
+      "Local en centro comercial",
+      "Nave industrial",
+      "Oficina",
+      "Otro",
+      "Quinta",
+      "Rancho",
+      "Terreno",
+      "Terreno comercial",
+      "Terreno industrial",
+      "Villa",
+    ];
+    const propertyTypesArray = Array.isArray(propertyTypes) ? propertyTypes : [propertyTypes];
+
+    if (propertyTypesArray.length > 0 && !propertyTypesArray.every((type) => validPropertyTypes.includes(type)))
+      throw new Error(userMessages.errors.invalidPropertyType(validPropertyTypes));
 
     const easyBrokerService = new EasyBrokerService(env.EASYBROKER_API_KEY);
     const metaCatalogService = new MetaCatalogSheetsService({
@@ -29,8 +53,8 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
       privateKey: env.GOOGLE_PRIVATE_KEY,
     });
 
-    console.log(devMessages.logs.fetchingProperties(startPageNum, endPageNum));
-    const properties = await easyBrokerService.getPropertiesByPageRange(startPageNum, endPageNum);
+    console.log(devMessages.logs.fetchingProperties(statusArray, propertyTypesArray));
+    const properties = await easyBrokerService.getAllProperties(statusArray, propertyTypesArray);
     console.log(devMessages.logs.propertiesFound(properties.length));
 
     console.log(devMessages.logs.fetchingDetails);
@@ -39,22 +63,35 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
     console.log(devMessages.logs.formattingData);
     const metaFeedData = MetaPropertyFeedFormatter.formatForMetaCatalog(properties, detailedProperties);
 
+    if (resetSpreadsheet) {
+      console.log(devMessages.logs.resettingSpreadsheet);
+      await metaCatalogService.clearMetaCatalogFeed(spreadsheetId);
+    }
+
     console.log(devMessages.logs.appendingData);
     await metaCatalogService.appendMetaPropertyFeed(spreadsheetId, metaFeedData);
 
     const catalogInfo = await metaCatalogService.getMetaCatalogInfo(spreadsheetId);
 
-    const message = userMessages.success.propertiesAdded(properties.length, `${startPageNum}-${endPageNum}`, catalogInfo.title, catalogInfo.rowCount);
+    const message = userMessages.success.propertiesAdded(
+      properties.length,
+      statusArray,
+      propertyTypesArray,
+      catalogInfo.title,
+      catalogInfo.rowCount
+    );
+
     console.log(message);
 
     return buildResponse({
       statusCode: 200,
-      body: { 
-        message, 
-        propertiesAdded: properties.length, 
-        pageRange: `${startPageNum}-${endPageNum}`,
-        catalogTitle: catalogInfo.title, 
-        totalRows: catalogInfo.rowCount 
+      body: {
+        message,
+        propertiesAdded: properties.length,
+        statuses: statusArray,
+        propertyTypes: propertyTypesArray,
+        catalogTitle: catalogInfo.title,
+        totalRows: catalogInfo.rowCount,
       },
     });
   } catch (error) {

@@ -10,40 +10,54 @@ export class EasyBrokerService {
     this.apiKey = apiKey;
   }
 
-  async getPropertiesByPageRange(startPage: number = 1, endPage: number = 1): Promise<EasyBrokerPropertySummary[]> {
-    const allProperties: EasyBrokerPropertySummary[] = [];
+  async getAllProperties(statuses: string[], propertyTypes: string[] = []): Promise<EasyBrokerPropertySummary[]> {
+    const statusParams = statuses.map((status) => `search[statuses][]=${encodeURIComponent(status)}`).join("&");
+    const propertyTypeParams =
+      propertyTypes.length > 0 ? propertyTypes.map((type) => `search[property_types][]=${encodeURIComponent(type)}`).join("&") : "";
 
-    if (startPage < 1 || endPage < startPage || endPage - startPage + 1 > 10) {
-      throw new Error(userMessages.errors.invalidPageRange);
+    const allParams = [statusParams, propertyTypeParams].filter((param) => param).join("&");
+    const initialUrl = `${this.baseUrl}/properties?page=1&limit=50&${allParams}`;
+
+    const startTime = Date.now();
+    const timeoutMs = 14.5 * 60 * 1000;
+
+    return this.fetchPropertiesRecursively(initialUrl, [], 1, startTime, timeoutMs);
+  }
+
+  private async fetchPropertiesRecursively(
+    url: string,
+    accumulatedProperties: EasyBrokerPropertySummary[],
+    currentPage: number,
+    startTime: number,
+    timeoutMs: number
+  ): Promise<EasyBrokerPropertySummary[]> {
+    if (Date.now() - startTime > timeoutMs) {
+      throw new Error(devMessages.errors.queryTimeout(currentPage));
     }
 
-    for (let page = startPage; page <= endPage; page++) {
-      const url = `${this.baseUrl}/properties?page=${page}&limit=50`;
-      const options = {
-        method: "GET",
-        headers: {
-          accept: "application/json",
-          "X-Authorization": this.apiKey,
-        },
-      };
+    const options = {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        "X-Authorization": this.apiKey,
+      },
+    };
 
-      try {
-        const response: EasyBrokerPropertiesListResponse = await fetch(url, options).then((res) => res.json());
-        allProperties.push(...response.content);
+    try {
+      const response: EasyBrokerPropertiesListResponse = await fetch(url, options).then((res) => res.json());
+      const newProperties = [...accumulatedProperties, ...response.content];
 
-        console.log(devMessages.logs.pageProcessed(page, response.content.length));
+      console.log(devMessages.logs.pageProcessed(currentPage, response.content.length));
 
-        if (!response.pagination.next_page) {
-          console.log(devMessages.logs.noMorePages(page));
-          break;
-        }
-      } catch (error) {
-        console.error(devMessages.errors.fetchingPage(page), error);
-        throw error;
-      }
+      if (response.pagination.next_page)
+        return this.fetchPropertiesRecursively(response.pagination.next_page, newProperties, currentPage + 1, startTime, timeoutMs);
+
+      console.log(devMessages.logs.allPagesProcessed(currentPage, newProperties.length));
+      return newProperties;
+    } catch (error) {
+      console.error(devMessages.errors.fetchingPage(currentPage), error);
+      throw error;
     }
-
-    return allProperties;
   }
 
   async getPropertyDetails(publicId: string): Promise<EasyBrokerPropertyDetails> {
