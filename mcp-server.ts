@@ -40,7 +40,7 @@ const PROPERTY_TYPES = [
 
 const SyncOptionsSchema = z.object({
   spreadsheetId: z.string().describe("ID of the Google Sheets spreadsheet to sync with Easybroker properties."),
-  resetSpreadsheet: z.boolean().optional().default(false).describe("Whether to reset the Google Sheets spreadsheet before syncing."),
+  resetSpreadsheet: z.boolean().optional().default(true).describe("Whether to reset the Google Sheets spreadsheet before syncing."),
   statuses: z
     .array(z.enum(PROPERTY_STATUSES))
     .optional()
