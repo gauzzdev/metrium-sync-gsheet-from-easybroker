@@ -1,6 +1,6 @@
 import { EasyBrokerPropertiesListResponse, EasyBrokerPropertySummary } from "../core/types/easybroker/list-all-properties.types";
 import { EasyBrokerPropertyDetails } from "../core/types/easybroker/retrieve-a-property.types";
-import { devMessages, userMessages } from "../core/constants/messages.constants";
+import { devMessages } from "../core/constants/messages.constants";
 
 export class EasyBrokerService {
   private apiKey: string;

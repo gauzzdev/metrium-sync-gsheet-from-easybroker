@@ -12,7 +12,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
 
     const env = getEnv();
     const body = JSON.parse(event.body || "{}");
-    const { spreadsheetId, statuses = ["published"], propertyTypes = [], resetSpreadsheet = false } = body;
+    const { spreadsheetId, statuses = ["published"], propertyTypes = [], resetSpreadsheet = true } = body;
 
     if (!spreadsheetId) throw new Error(userMessages.errors.spreadsheetRequired);
 

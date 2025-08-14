@@ -44,7 +44,9 @@
   <body class="relative h-dvh w-dvw flex items-center justify-center p-4 font-mono text-white text-xs font-light overflow-hidden">
     <div id="vanta-bg" class="fixed inset-0 -z-10"></div>
 
-    <div class="absolute bg-black/50 border-red-500 border rounded-xl p-8 max-w-[90dvw] sm:max-w-2xl max-h-[90dvh] overflow-y-auto z-10">
+    <div
+      class="space-y-4 absolute bg-black/50 border-red-500 border rounded-xl p-8 max-w-[90dvw] sm:max-w-2xl max-h-[90dvh] overflow-y-auto z-10"
+    >
       <div class="space-y-8">
         <div class="space-y-1 text-center">
           <p class="text-xl">Metrium | Utilidad de sincronización</p>
@@ -73,9 +75,10 @@
             required
           />
 
-          <div class="flex items-center space-x-3 mt-3">
+          <div class="flex items-center space-x-3 mt-3 hidden">
             <input
               type="checkbox"
+              checked
               id="resetSpreadsheet"
               class="w-4 h-4 text-red-500 bg-stone-900 border border-stone-600 rounded focus:ring-red-500 focus:ring-2 accent-red-500"
             />
@@ -95,7 +98,7 @@
           </p>
         </div>
 
-        <div class="space-y-2">
+        <div class="space-y-2 hidden">
           <label for="statuses">Estatus de las propiedades:</label>
           <select
             id="statuses"
@@ -158,7 +161,7 @@
         </button>
       </div>
 
-      <div id="responseSection" class="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200 hidden">
+      <div id="responseSection" class="p-4 bg-gray-50 rounded-md border border-gray-200 hidden">
         <p id="responseContent" class="whitespace-pre-wrap text-sm text-gray-800"></p>
       </div>
     </div>
