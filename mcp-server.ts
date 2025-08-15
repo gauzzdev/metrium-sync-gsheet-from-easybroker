@@ -1,12 +1,16 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import z from "zod";
+import express, { Request, Response } from "express";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 
 const SERVER_CONFIG = {
   title: "Metrium | Sincronización de Easybroker con Google Sheets",
   name: "sync-gsheet-from-easybroker",
   version: "1.0.0",
 };
+
+const server = new McpServer(SERVER_CONFIG);
 
 const EASYBROKER_API_ENDPOINT = "https://3a4eeoseundplud3llhiatycp40husfx.lambda-url.us-east-1.on.aws/";
 
@@ -36,7 +40,7 @@ const PROPERTY_TYPES = [
 
 const SyncOptionsSchema = z.object({
   spreadsheetId: z.string().describe("ID of the Google Sheets spreadsheet to sync with Easybroker properties."),
-  resetSpreadsheet: z.boolean().optional().default(false).describe("Whether to reset the Google Sheets spreadsheet before syncing."),
+  resetSpreadsheet: z.boolean().optional().default(true).describe("Whether to reset the Google Sheets spreadsheet before syncing."),
   statuses: z
     .array(z.enum(PROPERTY_STATUSES))
     .optional()
@@ -55,15 +59,11 @@ async function syncEasybrokerData(options: SyncOptions) {
   try {
     const response = await fetch(EASYBROKER_API_ENDPOINT, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(options),
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
     return await response.json();
   } catch (error) {
@@ -71,70 +71,63 @@ async function syncEasybrokerData(options: SyncOptions) {
   }
 }
 
-function createSuccessResponse(spreadsheetId: string, responseData: any) {
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: `✅ Successfully synced Google Sheets with Easybroker properties for spreadsheet ID: ${spreadsheetId}`,
-      },
-      {
-        type: "text" as const,
-        text: `📊 Sync Results: ${JSON.stringify(responseData, null, 2)}`,
-      },
-    ],
-  };
-}
+server.tool(
+  "metrium-sync-gsheet-from-easybroker",
+  "Sync Google Sheets Meta Catalog Source from Metrium Easybroker",
+  SyncOptionsSchema.shape,
+  async (options: SyncOptions) => {
+    try {
+      const responseData = await syncEasybrokerData(options);
 
-function createErrorResponse(error: Error, spreadsheetId: string) {
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: `❌ Failed to sync Google Sheets (ID: ${spreadsheetId}) with Easybroker properties`,
-      },
-      {
-        type: "text" as const,
-        text: `🔍 Error Details: ${error.message}`,
-      },
-    ],
-  };
-}
-
-function createServer() {
-  const server = new McpServer(SERVER_CONFIG);
-
-  server.tool(
-    "sync-gsheet-from-easybroker",
-    "Sync Google Sheets Meta Catalog Source from Easybroker",
-    SyncOptionsSchema.shape,
-    async (options: SyncOptions) => {
-      try {
-        const responseData = await syncEasybrokerData(options);
-        return createSuccessResponse(options.spreadsheetId, responseData);
-      } catch (error) {
-        return createErrorResponse(error instanceof Error ? error : new Error("Unknown error occurred"), options.spreadsheetId);
-      }
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(responseData, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: error.message,
+          },
+        ],
+      };
     }
-  );
-
-  return server;
-}
-
-async function main() {
-  try {
-    const server = createServer();
-    const transport = new StdioServerTransport();
-
-    await server.connect(transport);
-    console.log("🚀 MCP Server started successfully");
-  } catch (error) {
-    console.error("💥 Failed to start MCP Server:", error);
-    process.exit(1);
   }
-}
+);
 
-main().catch((error) => {
-  console.error("🔥 Unhandled error:", error);
-  process.exit(1);
+const app = express();
+const transports: { [sessionId: string]: SSEServerTransport } = {};
+
+app.get("/sse", async (req: Request, res: Response) => {
+  const transport = new SSEServerTransport("/messages", res);
+  transports[transport.sessionId] = transport;
+
+  console.log(`SSE session started: ${transport.sessionId}`);
+
+  res.on("close", () => {
+    console.log(" SSE session closed:", transport.sessionId);
+    delete transports[transport.sessionId];
+  });
+
+  await server.connect(transport);
+});
+
+app.post("/messages", async (req: Request, res: Response) => {
+  const sessionId = req.query.sessionId as string;
+  const transport = transports[sessionId];
+
+  if (transport) {
+    await transport.handlePostMessage(req, res);
+  } else {
+    res.status(400).send("No transport found for sessionId");
+  }
+});
+
+app.listen(8080, () => {
+  console.log(`MCP Server running on port 8080`);
 });
