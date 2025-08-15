@@ -2,12 +2,16 @@ import { EasyBrokerPropertySummary } from "../core/types/easybroker/list-all-pro
 import { EasyBrokerPropertyDetails } from "../core/types/easybroker/retrieve-a-property.types";
 import { MetaPropertyFeedItem } from "../core/types/meta-catalog/meta-property-feed.types";
 
+
+const REQUIRED_FIELDS = ['home_listing_id','name','availability', 'price', 'url', 'address.city', 'address.country', 'neighborhood[0]', 'image[0].url', 'image[0].tag[0]'];
+  
 export class MetaPropertyFeedFormatter {
+
   static formatForMetaCatalog(
     properties: EasyBrokerPropertySummary[],
     detailedProperties: EasyBrokerPropertyDetails[]
   ): MetaPropertyFeedItem[] {
-    return properties.map((property, index) => {
+    const data = properties.map((property, index) => {
       const detailedProperty = detailedProperties[index];
 
       const cleanDescription = (detailedProperty?.description || "")
@@ -17,7 +21,7 @@ export class MetaPropertyFeedFormatter {
         .trim()
         .substring(0, 5000);
 
-      return {
+      const row =  {
         home_listing_id: property.public_id || "",
         name: property.title || "",
         description: cleanDescription,
@@ -36,10 +40,10 @@ export class MetaPropertyFeedFormatter {
         area_unit: "m2",
         year_built: detailedProperty?.age || "",
         "address.addr1": detailedProperty?.location?.street || "",
-        "address.city": detailedProperty?.location?.name?.split(",")[0]?.trim() || "",
+        "address.city": detailedProperty?.location?.name?.split(",")[1]?.trim() || "",
         "address.region": detailedProperty?.location?.name?.split(",")[1]?.trim() || "",
-        "address.country": "Mexico",
-        "neighborhood[0]": "",
+        "address.country": "Mexico",  
+        "neighborhood[0]": detailedProperty?.location?.name?.split(",")[0]?.trim() || "",
         virtual_tour_url: detailedProperty?.virtual_tour || "",
         "image[0].url": detailedProperty?.property_images?.[0]?.url || "",
         "image[0].tag[0]": detailedProperty?.property_images?.[0]?.title || "",
@@ -58,6 +62,20 @@ export class MetaPropertyFeedFormatter {
         "image[7].url": detailedProperty?.property_images?.[7]?.url || "",
         "image[7].tag[0]": detailedProperty?.property_images?.[7]?.title || "",
       };
+      
+      return row;
+
     });
+
+    return data.filter(r=> this.isValidRow(r));
+  }
+
+  static isValidRow(row: any): boolean {
+    for (const field of REQUIRED_FIELDS){
+        if (!row[field]) {
+          return false;
+        }
+    }
+    return true;
   }
 }
