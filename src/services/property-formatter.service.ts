@@ -26,7 +26,7 @@ export class MetaPropertyFeedFormatter {
         name: property.title || "",
         description: cleanDescription,
         availability: "available",
-        price: property.operations[0]?.formatted_amount || "0 MXN",
+        price: property.operations[0]?.formatted_amount ? `${property.operations[0]?.formatted_amount.replace(/[^\d]/g, "")} MXN` : "0 MXN",
         property_type: property.property_type || "",
         garden_type: "none",
         url: detailedProperty?.public_url || "",
