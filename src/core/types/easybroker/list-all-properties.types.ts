@@ -25,6 +25,7 @@ export interface EasyBrokerPropertySummary {
   agent: string;
   show_prices: boolean;
   share_commission: boolean;
+  status?: string;
 }
 
 export interface EasyBrokerPropertyOperation {
