@@ -3,8 +3,8 @@ import { EasyBrokerPropertyDetails } from "../core/types/easybroker/retrieve-a-p
 import { MetaPropertyFeedItem } from "../core/types/meta-catalog/meta-property-feed.types";
 
 
-const REQUIRED_FIELDS = ['home_listing_id','name','availability', 'price', 'url', 'address.city', 'address.country', 'neighborhood[0]', 'image[0].url', 'image[0].tag[0]'];
-  
+//const REQUIRED_FIELDS = ['home_listing_id','name','availability', 'price', 'url', 'address.city', 'address.country', 'neighborhood[0]', 'image[0].url', 'image[0].tag[0]'];
+const REQUIRED_FIELDS:string[] = [];
 export class MetaPropertyFeedFormatter {
 
   static formatForMetaCatalog(
