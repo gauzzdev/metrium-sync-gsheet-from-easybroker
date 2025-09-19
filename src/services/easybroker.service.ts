@@ -10,18 +10,29 @@ export class EasyBrokerService {
     this.apiKey = apiKey;
   }
 
-  async getAllProperties(statuses: string[], propertyTypes: string[] = []): Promise<EasyBrokerPropertySummary[]> {
-    const statusParams = statuses.map((status) => `search[statuses][]=${encodeURIComponent(status)}`).join("&");
-    const propertyTypeParams =
-      propertyTypes.length > 0 ? propertyTypes.map((type) => `search[property_types][]=${encodeURIComponent(type)}`).join("&") : "";
+  async getAllProperties(
+    statuses: string[],
+    propertyTypes: string[] = []
+  ): Promise<EasyBrokerPropertySummary[]> {
+    const allProperties: EasyBrokerPropertySummary[] = [];
 
-    const allParams = [statusParams, propertyTypeParams].filter((param) => param).join("&");
-    const initialUrl = `${this.baseUrl}/properties?page=1&limit=50&${allParams}`;
+    for (const status of statuses) {
+      const statusParams = `search[statuses][]=${encodeURIComponent(status)}`;
+      const propertyTypeParams =
+        propertyTypes.length > 0 ? propertyTypes.map((type) => `search[property_types][]=${encodeURIComponent(type)}`).join("&") : "";
 
-    const startTime = Date.now();
-    const timeoutMs = 14.5 * 60 * 1000;
+      const allParams = [statusParams, propertyTypeParams].filter((param) => param).join("&");
+      const initialUrl = `${this.baseUrl}/properties?page=1&limit=50&${allParams}`;
 
-    return this.fetchPropertiesRecursively(initialUrl, [], 1, startTime, timeoutMs);
+      const startTime = Date.now();
+      const timeoutMs = 14.5 * 60 * 1000;
+
+      const propertiesForStatus = await this.fetchPropertiesRecursively(initialUrl, [], 1, startTime, timeoutMs);
+      const propertiesWithStatus = propertiesForStatus.map((property) => ({ ...property, status }));
+      allProperties.push(...propertiesWithStatus);
+    }
+
+    return allProperties;
   }
 
   private async fetchPropertiesRecursively(
@@ -31,9 +42,7 @@ export class EasyBrokerService {
     startTime: number,
     timeoutMs: number
   ): Promise<EasyBrokerPropertySummary[]> {
-    if (Date.now() - startTime > timeoutMs) {
-      throw new Error(devMessages.errors.queryTimeout(currentPage));
-    }
+    if (Date.now() - startTime > timeoutMs) throw new Error(devMessages.errors.queryTimeout(currentPage));
 
     const options = {
       method: "GET",
